@@ -13,19 +13,30 @@ samples <- samples %>%
   dplyr::mutate(Histology = ifelse(Histology.subtype.1 == "NS", 
                                    as.character(Primary.histology), 
                                    as.character(Histology.subtype.1)))
-
-samples %>%
-  # dplyr::select(samples_name, id_tumour, Primary.site) %>% 
+within(samples, 
+       Primary.site <- factor(Primary.site, 
+                          levels = names(sort(table(Primary.site), 
+                                            decreasing = TRUE)))) %>% 
+  dplyr::filter(!is.na(Primary.site)) %>% 
   ggplot2::ggplot(ggplot2::aes(x = Primary.site, fill = Site.subtype.1)) +
   ggplot2::geom_bar() +
   ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+                 axis.title.x = ggplot2::element_blank(),
                  legend.position = "none") +
   ggplot2::ggsave(file = "SiteVSSiteSuv1.png", width = 8, heigh = 5)
 
-samples %>%
+within(samples, 
+       Primary.site <- factor(Primary.site, 
+                              levels = names(sort(table(Primary.site), 
+                                                  decreasing = TRUE)))) %>% 
+  dplyr::filter(!is.na(Primary.site)) %>% 
   ggplot2::ggplot(ggplot2::aes(x = Primary.site, fill = Histology)) +
   ggplot2::geom_bar() +
-  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+  ggplot2::ggtitle("Histologies in sites") +
+  # ggplot2::theme_minimal() +
+  ggplot2::theme(plot.margin = ggplot2::unit(c(0.2, 0.2, 0.2, 2.2), "cm"),
+                 axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+                 axis.title.x = ggplot2::element_blank(),
                  legend.position = "none") +
   ggplot2::ggsave(file = "SiteVSHistology.png", width = 8, heigh = 5)
 
@@ -138,9 +149,14 @@ densities <- lapply(pathologies$Primary.site,
 densities %>%
   ggplot2::ggplot(ggplot2::aes(x = age, y = density, color = Primary.site)) +
   ggplot2::geom_line() +
-  ggplot2::theme(legend.position = "none") +
   ggplot2::coord_cartesian(xlim = c(0, 100)) +
-  ggplot2::ggtitle("Age by site")
+  ggplot2::facet_grid(Primary.site ~ .) +
+  ggplot2::ggtitle("Age by site") +
+  ggplot2::theme(legend.position = "none",
+                 strip.text.y = ggplot2::element_text(angle = 0),
+                 axis.text.y = ggplot2::element_blank(),
+                 axis.ticks.y = ggplot2::element_blank()) +
+  ggplot2::ggsave(file = "age_in_facets.png", height = 20, width = 5)
 
 d_order <- densities %>%
   dplyr::group_by(Primary.site) %>%
