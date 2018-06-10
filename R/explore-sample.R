@@ -18,13 +18,17 @@ samples %>%
   ggplot2::ggplot(ggplot2::aes(x = Primary.site, fill = Site.subtype.1)) +
   ggplot2::geom_bar() +
   ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-                 legend.position = "none")
+                 legend.position = "none") +
+  ggplot2::ggsave(file = "SiteVSSiteSuv1.png", width = 8, heigh = 5)
 
 samples %>%
   ggplot2::ggplot(ggplot2::aes(x = Primary.site, fill = Histology)) +
   ggplot2::geom_bar() +
   ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-                 legend.position = "none")
+                 legend.position = "none") +
+  ggplot2::ggsave(file = "SiteVSHistology.png", width = 8, heigh = 5)
+
+
 
 # summary(samples$Histology)
 # 
@@ -57,7 +61,9 @@ samples %>%
                 m = ifelse(is.na(m), 0, m),
                 u = ifelse(is.na(u), 0, u)) %>% 
   ggtern::ggtern(ggtern::aes(x = f, y = m, z = u)) +
-  ggplot2::geom_point()
+  ggplot2::geom_point() +
+  ggplot2::ggtitle("Gender in sites") +
+  ggplot2::ggsave(file = "GenderBySite.png", width = 5, heigh = 5)
 
 samples %>% 
   dplyr::select(gender, Histology) %>%
@@ -73,7 +79,9 @@ samples %>%
                 m = ifelse(is.na(m), 0, m),
                 u = ifelse(is.na(u), 0, u)) %>% 
   ggtern::ggtern(ggtern::aes(x = f, y = m, z = u)) +
-  ggplot2::geom_point()
+  ggplot2::geom_point() +
+  ggplot2::ggtitle("Gender in sites") +
+  ggplot2::ggsave(file = "GenderByHistology.png", width = 5, heigh = 5)
 
 # AGE -------------------------------------------------------------------------
 
@@ -91,7 +99,9 @@ pat_samples %>%
   ggplot2::ggplot(ggplot2::aes(x = age, color = Primary.site)) +
   ggplot2::geom_density() +
   ggplot2::theme(legend.position = "none") +
-  ggplot2::coord_cartesian(xlim = c(0, 100))
+  ggplot2::coord_cartesian(xlim = c(0, 100)) +
+  ggplot2::ggtitle("Age by site") +
+  ggplot2::ggsave(file = "Age.png", width = 5, heigh = 5)
 
 
 get.density.df <- function(pat_samples){
@@ -116,7 +126,10 @@ densities %>%
   ggplot2::ggplot(ggplot2::aes(x = age, y = density, color = Primary.site)) +
   ggplot2::geom_line() +
   ggplot2::theme(legend.position = "none") +
-  ggplot2::coord_cartesian(xlim = c(0, 100))
+  ggplot2::coord_cartesian(xlim = c(0, 100)) +
+  ggplot2::ggtitle("Age by site") +
+  ggplot2::ggsave(file = "AgeSite.png", width = 5, heigh = 5)
+
 
 d_order <- densities %>%
   dplyr::group_by(Primary.site) %>%
@@ -157,4 +170,7 @@ joy.division.plot <- function(k, densities){
   
 }
 
-joy.division.plot(0.01, densities)
+joy.division.plot(0.01, densities) +
+  ggplot2::ggtitle("Gender in sites") +
+  ggplot2::ggsave(file = "GenderBySiteJoyDivision.png", width = 5, heigh = 8)
+
