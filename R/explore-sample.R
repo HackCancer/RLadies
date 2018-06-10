@@ -114,7 +114,7 @@ pat_samples %>%
   ggplot2::theme(legend.position = "none") +
   ggplot2::coord_cartesian(xlim = c(0, 100)) +
   ggplot2::ggtitle("Age by site") +
-  ggplot2::ggsave(file = "Age.png", width = 5, heigh = 5)
+  ggplot2::ggsave(file = "AgeBySite.png", width = 5, heigh = 5)
 
 
 get.density.df <- function(pat_samples){
@@ -140,9 +140,7 @@ densities %>%
   ggplot2::geom_line() +
   ggplot2::theme(legend.position = "none") +
   ggplot2::coord_cartesian(xlim = c(0, 100)) +
-  ggplot2::ggtitle("Age by site") +
-  ggplot2::ggsave(file = "AgeSite.png", width = 5, heigh = 5)
-
+  ggplot2::ggtitle("Age by site")
 
 d_order <- densities %>%
   dplyr::group_by(Primary.site) %>%
