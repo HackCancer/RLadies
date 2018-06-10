@@ -1,58 +1,60 @@
-# Exploratory analysis of COSMIC samples
+---
+title: "HackCancer"
+author: "RLadies"
+date: "10 June 2018"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 4
+    code_folding: hide
+    df_print: paged
+    theme: lumen
+---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
 library(dplyr)
+```
 
+## COSMIC Dataset
+
+COSMIC dataset contains information about a list of 1.397.048 samples.
+
+```{r load COSMIC}
 samples <- read.csv('~/HackCancer/data/COSMIC/Cosmicsample.tsv',
               sep = "\t", na.strings = c("NS", ""))
 
 samples_summary <- summary(samples)
 
-# SITE VS HISTOLOGY ----------------------------------------------------------
-
 samples <- samples %>%
   dplyr::mutate(Histology = ifelse(Histology.subtype.1 == "NS", 
                                    as.character(Primary.histology), 
                                    as.character(Histology.subtype.1)))
+```
 
-samples %>%
-  # dplyr::select(samples_name, id_tumour, Primary.site) %>% 
-  ggplot2::ggplot(ggplot2::aes(x = Primary.site, fill = Site.subtype.1)) +
-  ggplot2::geom_bar() +
-  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-                 legend.position = "none") +
-  ggplot2::ggsave(file = "SiteVSSiteSuv1.png", width = 8, heigh = 5)
+### Gender
 
-samples %>%
-  ggplot2::ggplot(ggplot2::aes(x = Primary.site, fill = Histology)) +
-  ggplot2::geom_bar() +
-  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-                 legend.position = "none") +
-  ggplot2::ggsave(file = "SiteVSHistology.png", width = 8, heigh = 5)
+```{r gender}
 
-
-
-# summary(samples$Histology)
-# 
-# s <- samples %>%
-#   dplyr::group_by(Histology) %>% 
-#   dplyr::summarise(count = n()) %>% 
-#   dplyr::arrange(desc(count))
-# 
-# s <- s %>% 
-#   dplyr::mutate(perc = count / sum(s$count))
-# 
-# s %>% 
-#   dplyr::filter(perc < 0.01) %>% 
-#   dplyr::mutate(index = as.integer(row.names(.))) %>%
-#   ggplot2::ggplot(ggplot2::aes(x = index, y = perc)) +
-#   ggplot2::geom_line()
-# 
-# GENDER ---------------------------------------------------------------------
-
-samples %>%
+gender_summary <- samples %>%
   dplyr::group_by(gender) %>% 
   dplyr::summarise(count = n()) %>% 
   dplyr::mutate(perc = count / sum(count) * 100)
+```
+
+There are quite a lot of missing values regarding gender in samples.
+
+* Female (f): `r gender_summary$count[gender_summary$gender == "f"]` samples, `r round(gender_summary$perc[gender_summary$gender == "f"])` % of total.
+* Male (m): `r gender_summary$count[gender_summary$gender == "m"]` samples, `r round(gender_summary$perc[gender_summary$gender == "m"])` % of total.
+* Undefined (u): `r gender_summary$count[gender_summary$gender == "u"]` samples, `r round(gender_summary$perc[gender_summary$gender == "u"])` % of total.
+
+Let's see how this proportions change by site or by histology:
+
+```{r gender plots}
 
 samples %>% 
   dplyr::select(gender, age, Primary.site) %>%
@@ -68,8 +70,7 @@ samples %>%
                 u = ifelse(is.na(u), 0, u)) %>% 
   ggtern::ggtern(ggtern::aes(x = f, y = m, z = u)) +
   ggplot2::geom_point() +
-  ggplot2::ggtitle("Gender in sites") +
-  ggplot2::ggsave(file = "GenderBySite.png", width = 5, heigh = 5)
+  ggplot2::ggtitle("Gender by sites")
 
 samples %>% 
   dplyr::select(gender, Histology) %>%
@@ -86,18 +87,21 @@ samples %>%
                 u = ifelse(is.na(u), 0, u)) %>% 
   ggtern::ggtern(ggtern::aes(x = f, y = m, z = u)) +
   ggplot2::geom_point() +
-  ggplot2::ggtitle("Gender in sites") +
-  ggplot2::ggsave(file = "GenderByHistology.png", width = 5, heigh = 5)
+  ggplot2::ggtitle("Gender by histology")
+```
 
-# AGE -------------------------------------------------------------------------
+We can see that some sites and some histologies are suffered just by one of genders (female or male), while others are suffered by both. Unfortunatly, most of them are undefined.
 
-nrow(samples)
-sum(!is.na(samples$age))
-sum(samples$age != 136, na.rm = TRUE)
+### Age
 
+Most common ages are not the same for every pathology. Some occur more frequently in chilhood, even if most do in adults. Bimodality is also perceived in some of the sites, regarding frequency along samples's ages.
+
+```{r age}
 samples <- samples %>%
   dplyr::filter(age != 136)
+```
 
+```{r densities simple}
 s <- samples %>% 
   dplyr::filter(!is.na(age)) %>%
   dplyr::group_by(Primary.site) %>% 
@@ -115,45 +119,18 @@ pat_samples %>%
   ggplot2::coord_cartesian(xlim = c(0, 100)) +
   ggplot2::ggtitle("Age by site") +
   ggplot2::ggsave(file = "Age.png", width = 5, heigh = 5)
+```
 
+Let's see this from Joy Division's perspective:
 
+```{r densities function}
 get.density.df <- function(pat_samples){
   d <- density(pat_samples$age)
   data.frame(age = d$x, density = d$y)
 }
+```
 
-pathologies <- pat_samples %>%
-  dplyr::select(Primary.site) %>% 
-  na.omit() %>% 
-  unique() 
-
-
-densities <- lapply(pathologies$Primary.site,
-                    function(p, x){dplyr::filter(x, Primary.site == p) %>% 
-                        get.density.df() %>% 
-                        dplyr::mutate(Primary.site = p)},
-                    dplyr::select(samples, Primary.site, age)) %>% 
-  dplyr::bind_rows()
-
-densities %>%
-  ggplot2::ggplot(ggplot2::aes(x = age, y = density, color = Primary.site)) +
-  ggplot2::geom_line() +
-  ggplot2::theme(legend.position = "none") +
-  ggplot2::coord_cartesian(xlim = c(0, 100)) +
-  ggplot2::ggtitle("Age by site") +
-  ggplot2::ggsave(file = "AgeSite.png", width = 5, heigh = 5)
-
-
-d_order <- densities %>%
-  dplyr::group_by(Primary.site) %>%
-  dplyr::summarise(q2_age = median(age))
-
-densities <- densities %>%
-  dplyr::left_join(d_order, by = "Primary.site") %>% 
-  dplyr::arrange(q2_age)
-
-k <- 0.01
-
+```{r densities joy division function}
 joy.division.plot <- function(k, densities){
   p <- ggplot2::ggplot()
   pathology_loop <- unique(densities$Primary.site)
@@ -180,8 +157,31 @@ joy.division.plot <- function(k, densities){
                        color = "black", fill = "black") 
   
 }
+```
+
+```{r densities joy division, fig.height=8, fig.align="center"}
+pathologies <- pat_samples %>%
+  dplyr::select(Primary.site) %>% 
+  na.omit() %>% 
+  unique() 
+
+
+densities <- lapply(pathologies$Primary.site,
+                    function(p, x){dplyr::filter(x, Primary.site == p) %>% 
+                        get.density.df() %>% 
+                        dplyr::mutate(Primary.site = p)},
+                    dplyr::select(samples, Primary.site, age)) %>% 
+  dplyr::bind_rows()
+
+
+d_order <- densities %>%
+  dplyr::group_by(Primary.site) %>%
+  dplyr::summarise(q2_age = median(age))
+
+densities <- densities %>%
+  dplyr::left_join(d_order, by = "Primary.site") %>% 
+  dplyr::arrange(q2_age)
 
 joy.division.plot(0.01, densities) +
-  ggplot2::ggtitle("Age by site") +
-  ggplot2::ggsave(file = "AgeBySiteJoyDivision.png", width = 5, heigh = 8)
-
+  ggplot2::ggtitle("Age by site")
+```
