@@ -1,3 +1,5 @@
+# Exploratory analysis of COSMIC samples
+
 library(dplyr)
 
 samples <- read.csv('~/HackCancer/data/COSMIC/Cosmicsample.tsv',
@@ -5,13 +7,12 @@ samples <- read.csv('~/HackCancer/data/COSMIC/Cosmicsample.tsv',
 
 samples_summary <- summary(samples)
 
+# SITE VS HISTOLOGY ----------------------------------------------------------
+
 samples <- samples %>%
-  dplyr::filter(age != 136) %>% 
   dplyr::mutate(Histology = ifelse(Histology.subtype.1 == "NS", 
                                    as.character(Primary.histology), 
                                    as.character(Histology.subtype.1)))
-
-# SITE VS HISTOLOGY ----------------------------------------------------------
 
 samples %>%
   # dplyr::select(samples_name, id_tumour, Primary.site) %>% 
@@ -85,6 +86,13 @@ samples %>%
 
 # AGE -------------------------------------------------------------------------
 
+nrow(samples)
+sum(!is.na(samples$age))
+sum(samples$age != 136, na.rm = TRUE)
+
+samples <- samples %>%
+  dplyr::filter(age != 136)
+
 s <- samples %>% 
   dplyr::filter(!is.na(age)) %>%
   dplyr::group_by(Primary.site) %>% 
@@ -139,13 +147,13 @@ densities <- densities %>%
   dplyr::left_join(d_order, by = "Primary.site") %>% 
   dplyr::arrange(q2_age)
 
-k <- 0.1
+k <- 0.01
 
 joy.division.plot <- function(k, densities){
   p <- ggplot2::ggplot()
-  patology_loop <- unique(densities$Primary.site)
-  i <- length(patology_loop)*k + k
-  for (site in patology_loop) {
+  pathology_loop <- unique(densities$Primary.site)
+  i <- length(pathology_loop)*k + k
+  for (site in pathology_loop) {
     site_density <- densities %>%
       dplyr::filter(Primary.site == site) %>% 
       dplyr::mutate(Primary.site = as.character(Primary.site),
@@ -156,8 +164,6 @@ joy.division.plot <- function(k, densities){
                            colour = "white", fill = "black", size = 0.5)
     i <- i - k
   }
-  
-  upper_limit <- max(densities$density) + k
   
   p + 
     ggplot2::theme(panel.grid = ggplot2::element_blank(),
@@ -171,6 +177,6 @@ joy.division.plot <- function(k, densities){
 }
 
 joy.division.plot(0.01, densities) +
-  ggplot2::ggtitle("Gender in sites") +
-  ggplot2::ggsave(file = "GenderBySiteJoyDivision.png", width = 5, heigh = 8)
+  ggplot2::ggtitle("Age by site") +
+  ggplot2::ggsave(file = "AgeBySiteJoyDivision.png", width = 5, heigh = 8)
 
